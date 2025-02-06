@@ -309,8 +309,8 @@ def add_vec_block_kernel(
     x = tl.load(x_ptr + x_offset, mask = mask_x)
     y = tl.load(y_ptr + y_offset, mask = mask_y)
     z = y[:, None] + x[None, :]
-    mask_z = mask_y[:, None] + mask_x[None, :]
-    print(f"z : {z}")
+    mask_z = mask_y[:, None] & mask_x[None, :]
+    print(f"mask_z : {mask_z}")
     z_offset = (y_offset * N0)[:, None] + x_offset[None, :]
     tl.store(z_ptr + z_offset, z, mask = mask_z)
     return
