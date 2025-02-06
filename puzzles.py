@@ -276,9 +276,8 @@ def add_vec_kernel(x_ptr, y_ptr, z_ptr, N0, N1, B0: tl.constexpr, B1: tl.constex
     print(f"y: {y}")
     z = x + y
     print(f"z: {z}")
-
-    
-    tl.store(z_ptr + B0 * B1, z)
+    z_offset = tl.arange(0, B0 * B1)
+    tl.store(z_ptr + z_offset, z)
     return
 
 
