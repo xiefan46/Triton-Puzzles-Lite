@@ -239,14 +239,11 @@ def add2_spec(x: Float32[200,]) -> Float32[200,]:
 @triton.jit
 def add_mask2_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     # Finish me!
-    off_x = tl.arange(0, B0)
-    off_x2 = tl.arange(B0, 2 * B0)
-    x = tl.load(x_ptr + off_x)
-    x2 = tl.load(x_ptr + off_x2, mask = off_x2 < N0)
-    z1 = x + 10.0
-    z2 = x2 + 10.0
-    tl.store(z_ptr + off_x, z1)
-    tl.store(z_ptr + off_x2, z2, mask = off_x2 < N0)
+    num_blocks = tl.cdiv(N0, B0)
+    off_x = tl.arange(0, B0 * num_blocks)
+    x = tl.load(x_ptr + off_x, mask = off_x < N0)
+    z = x + 10.0
+    tl.store(z_ptr + off_x, z, mask = off_x < N0)
     return
 
 
