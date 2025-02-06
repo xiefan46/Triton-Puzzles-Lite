@@ -346,6 +346,7 @@ def mul_relu_block_kernel(
     x = tl.load(x_ptr + x_offset, mask = x_mask)
     y = tl.load(y_ptr + y_offset, mask = y_mask)
     z = y[:, None] * x[None, :]
+    print(f"z before: {z}")
     z = tl.max(z, 0)
     z_offset = y_offset[:, None] * N0 + x_offset[None, :]
     z_mask = y_mask[:, None] & x_mask[None, :]
