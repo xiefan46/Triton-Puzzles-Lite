@@ -304,8 +304,8 @@ def add_vec_block_kernel(
     # Finish me!
     x_offset = block_id_x * B0 + tl.arange(0, B0)
     y_offset = block_id_y * B1 + tl.arange(0, B1)
-    x = tl.load(x_ptr, x_offset, mask = x_offset < N0)
-    y = tl.load(y_ptr, y_offset, mask = y_offset < N1)
+    x = tl.load(x_ptr + x_offset, mask = x_offset < N0)
+    y = tl.load(y_ptr + y_offset, mask = y_offset < N1)
     z = y[:, None] + x[None, :]
     z_offset = y_offset[:, None] * N0 + x_offset[None, :]
     tl.store(z_ptr + z_offset, z, z_offset < N0 * N1)
