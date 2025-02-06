@@ -241,7 +241,7 @@ def add_mask2_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     # Finish me!
     pid = tl.program_id(0)
     start_pos = pid * B0
-    x_offset = tl.arange(start_pos, start_pos + B0)
+    x_offset = start_pos + tl.arange(0, B0)
     x = tl.load(x_ptr, x_offset, mask = x_offset < N0)
     z = x + 10.0
     tl.store(z_ptr + x_offset, z, mask = x_offset < N0)
