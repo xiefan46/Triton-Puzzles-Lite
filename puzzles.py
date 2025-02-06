@@ -349,6 +349,9 @@ def mul_relu_block_kernel(
     z = tl.max(z, 0)
     z_offset = y_offset[:, None] * N0 + x_offset[None, :]
     z_mask = y_mask[:, None] & x_mask[None, :]
+    print(f"z : {z}")
+    print(f"z offset : {z_offset}")
+    print(f"z mask: {z_mask}")
     tl.store(z_ptr + z_offset, z, mask = z_mask)
     return
 
