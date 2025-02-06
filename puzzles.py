@@ -339,6 +339,16 @@ def mul_relu_block_kernel(
     block_id_x = tl.program_id(0)
     block_id_y = tl.program_id(1)
     # Finish me!
+    x_offset = block_id_x * B0 + tl.arange(0, B0)
+    y_offset = block_id_y * B1 + tl.arange(0, B1)
+    x_mask = x_offset < N0
+    y_mask = y_offset < N1
+    x = tl.load(x_ptr + x_offset, mask = x_mask)
+    y = tl.load(y_ptr + y_offset, mask = y_mask)
+    z = y[:, None] * x[None, :]
+    z_offset = y_offset[:, None] * N0 + x_offset[None, :]
+    z_mask = y_mask[:, None] & x[None, :]
+    tl.store(z_ptr + z_offset, z, mask = z_mask)
     return
 
 
