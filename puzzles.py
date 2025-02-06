@@ -240,7 +240,7 @@ def add2_spec(x: Float32[200,]) -> Float32[200,]:
 def add_mask2_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     # Finish me!
     off_x = tl.arange(0, B0)
-    off_x2 = tl.arrage(B0, 2 * B0)
+    off_x2 = tl.arange(B0, 2 * B0)
     x = tl.load(x_ptr + off_x)
     x2 = tl.load(x_ptr + off_x2, mask = off_x2 < N0)
     z1 = x + 10.0
