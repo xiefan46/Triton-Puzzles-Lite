@@ -268,6 +268,12 @@ def add_vec_spec(x: Float32[32,], y: Float32[32,]) -> Float32[32, 32]:
 @triton.jit
 def add_vec_kernel(x_ptr, y_ptr, z_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr):
     # Finish me!
+    x_offset = tl.arange(0, B0)[None, :]
+    y_offset = tl.arange(0, B1)[:, None]
+    x = tl.load(x_ptr + x_offset)
+    y = tl.load(y_ptr + y_offset)
+    z = y + x
+    tl.store(y_offset + x_offset, z)
     return
 
 
