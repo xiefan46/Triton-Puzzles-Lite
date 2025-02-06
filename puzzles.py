@@ -246,7 +246,7 @@ def add_mask2_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     z1 = x + 10.0
     z2 = x2 + 10.0
     tl.store(z_ptr + off_x, z1)
-    tl.store(z_ptr, off_x2, z2, mask = off_x2 < N0)
+    tl.store(z_ptr + off_x2, z2, mask = off_x2 < N0)
     return
 
 
