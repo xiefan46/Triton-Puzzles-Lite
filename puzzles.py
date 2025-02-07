@@ -391,23 +391,18 @@ def mul_relu_block_back_kernel(
     block_id_i = tl.program_id(0)
     block_id_j = tl.program_id(1)
     # Finish me!
-    x_offset = tl.arange(0, B0) + block_id_i * B0
-    y_offset = tl.arange(0, B1) + block_id_j * B1
-    dz_offset = y_offset[:, None] * N0 + x_offset
-    x_mask = x_offset < N0
-    y_mask = y_offset < N1
-    dz_mask = y_mask[:, None] & x_mask[None, :]
+    i_offset = tl.arange(0, B0) + block_id_i * B0
+    j_offset = tl.arange(0, B1) + block_id_j * B1
+    x_offset = j_offset[:, None] * N0 + i_offset
+    i_mask = i_offset < N0
+    j_mask = j_offset < N1
+    x_mask = j_mask[:, None] & i_mask[None, :]
     x = tl.load(x_ptr + x_offset, mask=x_mask)
-    y = tl.load(y_ptr + y_offset, mask=y_mask)
-    dz = tl.load(dz_ptr + dz_offset, mask=dz_mask)
-    z = y[:, None] * x[None, :]
-    z = tl.where(z > 0, z, 0.0)
-    
-    dx = z * y[:, None]
-    print(f"z shape: {z.shape}, y shape: {y.shape}, dx shape: {dx.shape}")
-    dx = dx[None, :]
-    print(dx.shape)
-    print(dx)
+    y = tl.load(y_ptr + j_offset, mask=j_mask)
+    dz = tl.load(dz_ptr + x_offset, mask=x_mask)
+    df = tl.where(x * y[:, None] > 0, 1.0, 0.0)
+    dxy_x = y[:, None]
+    dx = df * dz * dxy_x
     tl.store(dx_ptr + x_offset, dx, mask=x_mask)
     return
 
