@@ -404,6 +404,7 @@ def mul_relu_block_back_kernel(
     z = tl.where(z > 0, z, 0.0)
     dx = z * y[:, None]
     dx = dx[None, :]
+    print(dx.shape)
     print(dx)
     tl.store(dx_ptr + x_offset, dx, mask=x_mask)
     return
