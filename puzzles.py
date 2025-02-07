@@ -402,8 +402,9 @@ def mul_relu_block_back_kernel(
     dz = tl.load(dz_ptr + dz_offset, mask=dz_mask)
     z = y[:, None] * x[None, :]
     z = tl.where(z > 0, z, 0.0)
-    print(f"z shape: {z.shape}, y shape: {y.shape}")
+    
     dx = z * y[:, None]
+    print(f"z shape: {z.shape}, y shape: {y.shape}, dx shape: {dx.shape}")
     dx = dx[None, :]
     print(dx.shape)
     print(dx)
