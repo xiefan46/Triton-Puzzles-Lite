@@ -428,7 +428,23 @@ def sum_spec(x: Float32[4, 200]) -> Float32[4,]:
 
 @triton.jit
 def sum_kernel(x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr):
-    # Finish me!
+    # 输入矩阵总大小 [N0, T]， 每次处理[B0, B1] 大小
+    block_id = tl.program_id(0)
+    row_offset = tl.arange(0, B0) + block_id * B0
+    row_mask = row_offset < N0
+    col_start = 0
+    sum = tl.zeros((B0, ), dtype=tl.float32)
+    while col_start < T:
+        col_offset = col_start + tl.arange(0, B1)
+        col_mask = col_offset < T
+        x_offset = row_offset[:, None] * T + col_offset
+        x_mask = row_mask[:, None] & col_mask
+        x = tl.load(x_ptr + x_offset, mask=x_mask)
+        local_sum = tl.sum(x, axis=1)
+        print(f"local sum shape: {local_sum.shape}")
+        sum += local_sum
+        col_start += B1
+    tl.store(z_ptr + row_offset, sum, mask=row_mask)
     return
 
 
