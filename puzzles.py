@@ -433,7 +433,7 @@ def sum_kernel(x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr):
     row_offset = tl.arange(0, B0) + block_id * B0
     row_mask = row_offset < N0
     col_start = 0
-    sum = tl.zeros((B0, ), dtype=tl.float32)
+    sum = tl.zeros((B0), dtype=tl.float32)
     while col_start < T:
         col_offset = col_start + tl.arange(0, B1)
         col_mask = col_offset < T
@@ -441,7 +441,6 @@ def sum_kernel(x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr):
         x_mask = row_mask[:, None] & col_mask
         x = tl.load(x_ptr + x_offset, mask=x_mask)
         local_sum = tl.sum(x, axis=1)
-        print(f"local sum shape: {local_sum.shape}")
         sum += local_sum
         col_start += B1
     tl.store(z_ptr + row_offset, sum, mask=row_mask)
@@ -479,6 +478,8 @@ def softmax_spec(x: Float32[4, 200]) -> Float32[4, 200]:
     x_exp = x.exp()
     return x_exp / x_exp.sum(1, keepdim=True)
 
+# input 总大小 [N0, T], block大小 [B0, B1]
+# output 总大小 [N0, T]
 
 @triton.jit
 def softmax_kernel(x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr):
@@ -496,7 +497,45 @@ def softmax_kernel_brute_force(
     """3 loops ver."""
     block_id_i = tl.program_id(0)
     log2_e = 1.44269504
-    # Finish me!
+
+    row_offset = tl.arange(0, B0) + block_id_i * B0
+    row_mask = row_offset < N0
+
+    # calculate max
+    exp_max = tl.full((B0, 1), -float("inf"), dtype=tl.float32)
+    for col_start in tl.range(0, T, B1):
+        col_offset = col_start + tl.arange(0, B1)
+        col_mask = col_offset < T
+        x_offset = row_offset[:, None] * N0 + col_offset
+        x_mask = row_mask[:, None] & col_mask
+        x = tl.load(x_ptr + x_offset, mask=x_mask)
+        x_max = tl.max(x, axis=1)
+        print(f"x max shape: {x_max.shape}")
+        exp_max = tl.maximum(x_max, exp_max)
+
+    # calculate sum
+    exp_sum = tl.zeros((B0, 1), dtype=tl.float32)
+    for col_start in tl.range(0, T, B1):
+        col_offset = col_start + tl.arange(0, B1)
+        col_mask = col_offset < T
+        x_offset = row_offset[:, None] * N0 + col_offset
+        x_mask = row_mask[:, None] & col_mask
+        x = tl.load(x_ptr + x_offset, mask=x_mask)
+        exp_x = tl.exp2(log2_e * (x - exp_max))
+        exp_x_sum = tl.sum(exp_x, axis=1)
+        exp_sum += exp_x_sum
+    
+
+    # calculate softmax
+    for col_start in tl.range(0, T, B1):
+        col_offset = col_start + tl.arange(0, B1)
+        col_mask = col_offset < T
+        x_offset = row_offset[:, None] * N0 + col_offset
+        x_mask = row_mask[:, None] & col_mask
+        x = tl.load(x_ptr + x_offset, mask=x_mask)
+        exp_x = tl.exp2(log2_e * (x - exp_max))
+        softmax_x = exp_x / exp_sum
+        tl.store(z_ptr + x_offset, softmax_x, mask=x_mask)
     return
 
 
