@@ -524,10 +524,12 @@ def softmax_kernel_brute_force(
         x_mask = row_mask[:, None] & col_mask
         x = tl.load(x_ptr + x_offset, mask=x_mask)
         exp_x = tl.exp2(log2_e * (x - exp_max[:, None]))
+        print(f"exp_x shape: {exp_x.shape}")
         exp_x_sum = tl.sum(exp_x, axis=1)
         exp_sum += exp_x_sum
+        print(f"exp_x_sum shape: {exp_x_sum.shape}, exp_sum shape: {exp_sum.shape}")
 
-
+    print(f"exp_max: {exp_max}, exp_sum: {exp_sum}")
     # calculate softmax
     for col_start in tl.range(0, T, B1):
         col_offset = col_start + tl.arange(0, B1)
