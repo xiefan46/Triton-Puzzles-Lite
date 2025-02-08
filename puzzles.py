@@ -510,6 +510,7 @@ def softmax_kernel_brute_force(
         x_mask = row_mask[:, None] & col_mask
         x = tl.load(x_ptr + x_offset, mask=x_mask)
         x_max = tl.max(x, axis=1)
+        print(f"x shape: {x.shape}")
         print(f"x max shape: {x_max.shape}")
         exp_max = tl.maximum(x_max, exp_max)
 
