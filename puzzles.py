@@ -506,7 +506,7 @@ def softmax_kernel_brute_force(
     for col_start in tl.range(0, T, B1):
         col_offset = col_start + tl.arange(0, B1)
         col_mask = col_offset < T
-        x_offset = row_offset[:, None] * N0 + col_offset
+        x_offset = row_offset[:, None] * T + col_offset
         x_mask = row_mask[:, None] & col_mask
         x = tl.load(x_ptr + x_offset, mask=x_mask)
         x_max = tl.max(x, axis=1)
@@ -520,7 +520,7 @@ def softmax_kernel_brute_force(
     for col_start in tl.range(0, T, B1):
         col_offset = col_start + tl.arange(0, B1)
         col_mask = col_offset < T
-        x_offset = row_offset[:, None] * N0 + col_offset
+        x_offset = row_offset[:, None] * T + col_offset
         x_mask = row_mask[:, None] & col_mask
         x = tl.load(x_ptr + x_offset, mask=x_mask)
         exp_x = tl.exp2(log2_e * (x - exp_max[:, None]))
@@ -534,11 +534,11 @@ def softmax_kernel_brute_force(
     for col_start in tl.range(0, T, B1):
         col_offset = col_start + tl.arange(0, B1)
         col_mask = col_offset < T
-        x_offset = row_offset[:, None] * N0 + col_offset
+        x_offset = row_offset[:, None] * T + col_offset
         x_mask = row_mask[:, None] & col_mask
         x = tl.load(x_ptr + x_offset, mask=x_mask)
         exp_x = tl.exp2(log2_e * (x - exp_max[:, None]))
-        softmax_x = exp_x / exp_sum
+        softmax_x = exp_x / exp_sum[:, None]
         print(f"softmax_x: {softmax_x}, shape: {softmax_x.shape}")
         tl.store(z_ptr + x_offset, softmax_x, mask=x_mask)
     return
