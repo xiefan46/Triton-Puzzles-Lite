@@ -499,9 +499,9 @@ def softmax_kernel(x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr):
         mask_ij = mask_i[:, None] & mask_j
         x = tl.load(x_ptr + off_ij, mask=mask_ij)
         x_max = tl.max(x, axis=1)
+        print(f"max shape: {max.shape}, x_max shape: {x_max.shape}")
         exp_x = tl.exp2(log2_e * (x - x_max))
         exp_x_sum = tl.sum(exp_x, axis=1)
-        print(f"max shape: {max.shape}, x_max shape: {x_max.shape}")
         exp_sum = exp_sum * (max - x_max) + exp_x_sum
         max = tl.maximum(max, x_max)
 
