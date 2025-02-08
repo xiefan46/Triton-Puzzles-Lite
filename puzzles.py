@@ -524,7 +524,7 @@ def softmax_kernel_brute_force(
         exp_x = tl.exp2(log2_e * (x - exp_max))
         exp_x_sum = tl.sum(exp_x, axis=1)
         exp_sum += exp_x_sum
-    
+
 
     # calculate softmax
     for col_start in tl.range(0, T, B1):
@@ -821,7 +821,7 @@ def run_puzzles(args, puzzles: List[int]):
     if 8 in puzzles:
         print("Puzzle #8:")
         ok = test(
-            softmax_kernel,
+            softmax_kernel_brute_force,
             softmax_spec,
             B={"B0": 1, "B1": 32},
             nelem={"N0": 4, "N1": 32, "T": 200},
