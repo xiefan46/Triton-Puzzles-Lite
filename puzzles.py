@@ -610,15 +610,14 @@ def flashatt_kernel(
     for start_j in tl.range(0, T, B1):
         off_j = start_j + tl.arange(0, B1)
         mask_j = off_j < T
-        off_ij = off_i[:, None] * T + off_j
-        mask_ij = mask_i[:, None] & mask_j
+        k = tl.load(k_ptr + off_j, mask=mask_j)
+        v = tl.load(v_ptr + off_j, mask=mask_j)
 
-        k = tl.load(k_ptr + off_ij, mask=mask_ij, other=-1.0e6)
-        v = tl.load(v_ptr + off_ij, mask=mask_ij, other=-1.0e6)
+        # mask_ij = mask_i[:, None] & mask_j
 
         print(f"q shape: {q.shape}, k shape: {k.shape}, v shape: {v.shape}")
 
-        x = q[:, None] * k # [B0, B1]
+        x = q[:, None] * k # + tl.where(mask_ij, 0, -1.0e6) # [B0, B1] + tl.where
         print(f"x shape: {x.shape}")
         m_new = tl.maximum(m, tl.max(x, axis=1)[:, None])
 
