@@ -673,13 +673,10 @@ def conv2d_kernel(
     print(f"k shape: {k.shape}")
 
     for i_start in tl.range(0, H):
-        off_i = tl.arange(0, KH) + i_start
-        mask_i = off_i < H
+        off_i = off_h[None, :, None] + i_start
         for j_start in tl.range(0, W):
-            off_j = tl.arange(0, KW) + j_start
-            mask_j = off_j < W
-
-            off_x = off_b[:, None, None] * H * W + off_i[None, :, None] * W + off_j[None, None, :]
+            off_j = off_w[None, None, :] + j_start
+            off_x = off_b[:, None, None] * H * W + off_i * W + off_j
             mask_x = (off_i < H) & (off_j < W)
             x = tl.load(x_ptr + off_x, mask=mask_x)
             print(f"x shape: {x.shape}, k reshape shape : {k[None, :, :].shape}")
