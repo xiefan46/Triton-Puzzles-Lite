@@ -715,7 +715,7 @@ def conv2d_kernel(
 
             z = tl.sum(x * k[None, :])
             off_z = off_i * H * W + j * W + l
-            print(f"x shape: {x.shape}, z shape: {z.shape}, off_z shape: {off_z.shape}")
+            print(f"x shape: {x.shape}, z shape: {z.shape}, off_z shape: {off_z.shape}, z: {z}")
             tl.store(z_ptr + off_z, z)
 
     return
