@@ -635,7 +635,7 @@ def flashatt_kernel(
         o = o_new
 
     print(f"o shape: {o.shape}, o trans shape: {tl.trans(o).shape}, o trans2 shape: {o[None, :].shape}")
-    tl.store(z_ptr + off_i, o[None, :], mask=mask_i)
+    tl.store(z_ptr + off_i, o, mask=mask_i)
 
     return
 
