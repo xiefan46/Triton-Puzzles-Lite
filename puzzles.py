@@ -683,7 +683,8 @@ def conv2d_kernel(
             conv = x * k[None, :, :].sum(axis=2).sum(axis=1)
             print(f"conv shape: {conv.shape}")
 
-            off_z = off_b + i_start * W + j_start
+            off_conv = off_b + i_start * W + j_start
+            tl.store(z_ptr + off_conv, conv)
 
     # for h_start in tl.range(0, H, KH):
     #     off_h = tl.arange(0, KH) + h_start
