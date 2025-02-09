@@ -667,7 +667,7 @@ def conv2d_kernel(
 
     off_h = tl.arange(0, KH)
     off_w = tl.arange(0, KW)
-    off_k = off_h[:, None] * W + off_w
+    off_k = off_h[:, None] * KW + off_w
     k = tl.load(k_ptr + off_k)
 
     print(f"k shape: {k.shape}")
