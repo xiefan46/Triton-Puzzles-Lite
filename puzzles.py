@@ -11,7 +11,6 @@ from display import print_end_line
 from tensor_type import Float32, Int32
 from test_puzzle import test
 
-
 """
 # Triton Puzzles Lite
 
@@ -29,13 +28,11 @@ You will start with trivial examples and build your way up to real algorithms li
 Quantized neural networks. These puzzles **do not** need to run on GPU since they use a Triton interpreter.
 """
 
-
 r"""
 ## Introduction
 
 To begin with, we will only use `tl.load` and `tl.store` in order to build simple programs.
 """
-
 
 """
 ### Demo 1
@@ -216,7 +213,7 @@ def add_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     off_x = tl.arange(0, B0)
     x = tl.load(x_ptr + off_x)
     # Finish me!
-    z = x +10.0
+    z = x + 10.0
     tl.store(z_ptr + off_x, z)
     return
 
@@ -242,9 +239,9 @@ def add_mask2_kernel(x_ptr, z_ptr, N0, B0: tl.constexpr):
     pid = tl.program_id(0)
     start_pos = pid * B0
     x_offset = start_pos + tl.arange(0, B0)
-    x = tl.load(x_ptr + x_offset, mask = x_offset < N0)
+    x = tl.load(x_ptr + x_offset, mask=x_offset < N0)
     z = x + 10.0
-    tl.store(z_ptr + x_offset, z, mask = x_offset < N0)
+    tl.store(z_ptr + x_offset, z, mask=x_offset < N0)
     return
 
 
@@ -297,7 +294,7 @@ def add_vec_block_spec(x: Float32[100,], y: Float32[90,]) -> Float32[90, 100]:
 
 @triton.jit
 def add_vec_block_kernel(
-    x_ptr, y_ptr, z_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr
+        x_ptr, y_ptr, z_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr
 ):
     block_id_x = tl.program_id(0)
     block_id_y = tl.program_id(1)
@@ -306,12 +303,12 @@ def add_vec_block_kernel(
     y_offset = block_id_y * B1 + tl.arange(0, B1)
     mask_x = x_offset < N0
     mask_y = y_offset < N1
-    x = tl.load(x_ptr + x_offset, mask = mask_x)
-    y = tl.load(y_ptr + y_offset, mask = mask_y)
+    x = tl.load(x_ptr + x_offset, mask=mask_x)
+    y = tl.load(y_ptr + y_offset, mask=mask_y)
     z = y[:, None] + x[None, :]
     mask_z = mask_y[:, None] & mask_x[None, :]
     z_offset = (y_offset * N0)[:, None] + x_offset[None, :]
-    tl.store(z_ptr + z_offset, z, mask = mask_z)
+    tl.store(z_ptr + z_offset, z, mask=mask_z)
     return
 
 
@@ -334,7 +331,7 @@ def mul_relu_block_spec(x: Float32[100,], y: Float32[90,]) -> Float32[90, 100]:
 
 @triton.jit
 def mul_relu_block_kernel(
-    x_ptr, y_ptr, z_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr
+        x_ptr, y_ptr, z_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr
 ):
     block_id_x = tl.program_id(0)
     block_id_y = tl.program_id(1)
@@ -351,7 +348,6 @@ def mul_relu_block_kernel(
     z_mask = y_mask[:, None] & x_mask[None, :]
     tl.store(z_ptr + z_offset, relu_z, mask=z_mask)
     return
-
 
 
 r"""
@@ -372,7 +368,7 @@ is of shape `N1` by `N0`
 
 
 def mul_relu_block_back_spec(
-    x: Float32[90, 100], y: Float32[90,], dz: Float32[90, 100]
+        x: Float32[90, 100], y: Float32[90,], dz: Float32[90, 100]
 ) -> Float32[90, 100]:
     x = x.clone()
     y = y.clone()
@@ -386,7 +382,7 @@ def mul_relu_block_back_spec(
 
 @triton.jit
 def mul_relu_block_back_kernel(
-    x_ptr, y_ptr, dz_ptr, dx_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr
+        x_ptr, y_ptr, dz_ptr, dx_ptr, N0, N1, B0: tl.constexpr, B1: tl.constexpr
 ):
     block_id_i = tl.program_id(0)
     block_id_j = tl.program_id(1)
@@ -478,6 +474,7 @@ def softmax_spec(x: Float32[4, 200]) -> Float32[4, 200]:
     x_exp = x.exp()
     return x_exp / x_exp.sum(1, keepdim=True)
 
+
 # input 总大小 [N0, T], block大小 [B0, B1]
 # output 总大小 [N0, T]
 
@@ -499,7 +496,6 @@ def softmax_kernel(x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr):
         mask_ij = mask_i[:, None] & mask_j
         x = tl.load(x_ptr + off_ij, mask=mask_ij)
         x_max = tl.maximum(tl.max(x, axis=1)[:, None], max)
-        print(f"max shape: {max.shape}, x_max shape: {x_max.shape}")
         exp_x = tl.exp2(log2_e * (x - x_max))
         exp_x_sum = tl.sum(exp_x, axis=1)
         factor = tl.exp2(log2_e * (max - x_max))
@@ -521,7 +517,7 @@ def softmax_kernel(x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr):
 
 @triton.jit
 def softmax_kernel_brute_force(
-    x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr
+        x_ptr, z_ptr, N0, N1, T, B0: tl.constexpr, B1: tl.constexpr
 ):
     """3 loops ver."""
     block_id_i = tl.program_id(0)
@@ -583,7 +579,7 @@ Hint: Use `tl.where` to mask `q dot k` to -inf to avoid overflow (NaN).
 
 
 def flashatt_spec(
-    q: Float32[200,], k: Float32[200,], v: Float32[200,]
+        q: Float32[200,], k: Float32[200,], v: Float32[200,]
 ) -> Float32[200,]:
     x = q[:, None] * k[None, :]
     x_max = x.max(1, keepdim=True)[0]
@@ -595,12 +591,38 @@ def flashatt_spec(
 
 @triton.jit
 def flashatt_kernel(
-    q_ptr, k_ptr, v_ptr, z_ptr, N0, T, B0: tl.constexpr, B1: tl.constexpr
+        q_ptr, k_ptr, v_ptr, z_ptr, N0, T, B0: tl.constexpr, B1: tl.constexpr
 ):
     block_id_i = tl.program_id(0)
     log2_e = 1.44269504
     myexp = lambda x: tl.exp2(log2_e * x)
-    # Finish me!
+
+    off_i = block_id_i * B0 + tl.arange(0, B0)
+    mask_i = off_i < N0
+
+    m = tl.full((B0, 1), -float('inf'), dtype=tl.float32)
+    d = tl.zeros((B0, 1), dtype=tl.float32)
+    o = tl.zeros((B0, 1), dtype=tl.float32)
+    for start_j in tl.range(0, T, B1):
+        off_j = start_j + tl.arange(0, B1)
+        mask_j = off_j < T
+        off_ij = off_i[:, None] * T + off_j
+        mask_ij = mask_i[:, None] & mask_j
+        q = tl.load(q_ptr + off_ij, mask=mask_ij)
+        k = tl.load(k_ptr + off_ij, mask=mask_ij)
+        v = tl.load(v_ptr + off_ij, mask=mask_ij)
+
+        x = q * k
+        m_new = tl.maximum(m, tl.max(x, axis=1)[:, None])
+        d_new = myexp(m - m_new) * d + myexp(x - m_new)
+        o_new = myexp(m - m_new) * d / d_new * o + myexp(x - m_new) / d_new * v
+
+        m = m_new
+        d = d_new
+        o = o_new
+
+    tl.store(z_ptr + off_i, o[None, :], mask=mask_i)
+
     return
 
 
@@ -624,13 +646,13 @@ def conv2d_spec(x: Float32[4, 8, 8], k: Float32[4, 4]) -> Float32[4, 8, 8]:
     # print(x.shape, k.shape)
     for i in range(8):
         for j in range(8):
-            z[:, i, j] = (k[None, :, :] * x[:, i : i + 4, j : j + 4]).sum(1).sum(1)
+            z[:, i, j] = (k[None, :, :] * x[:, i: i + 4, j: j + 4]).sum(1).sum(1)
     return z
 
 
 @triton.jit
 def conv2d_kernel(
-    x_ptr, k_ptr, z_ptr, N0, H, W, KH: tl.constexpr, KW: tl.constexpr, B0: tl.constexpr
+        x_ptr, k_ptr, z_ptr, N0, H, W, KH: tl.constexpr, KW: tl.constexpr, B0: tl.constexpr
 ):
     block_id_i = tl.program_id(0)
     # Finish me!
@@ -664,17 +686,17 @@ def dot_spec(x: Float32[4, 32, 32], y: Float32[4, 32, 32]) -> Float32[4, 32, 32]
 
 @triton.jit
 def dot_kernel(
-    x_ptr,
-    y_ptr,
-    z_ptr,
-    N0,
-    N1,
-    N2,
-    MID,
-    B0: tl.constexpr,
-    B1: tl.constexpr,
-    B2: tl.constexpr,
-    B_MID: tl.constexpr,
+        x_ptr,
+        y_ptr,
+        z_ptr,
+        N0,
+        N1,
+        N2,
+        MID,
+        B0: tl.constexpr,
+        B1: tl.constexpr,
+        B2: tl.constexpr,
+        B_MID: tl.constexpr,
 ):
     block_id_j = tl.program_id(0)
     block_id_k = tl.program_id(1)
@@ -710,16 +732,16 @@ GROUP = 8
 
 
 def quant_dot_spec(
-    scale: Float32[32, 8],
-    offset: Int32[32,],
-    weight: Int32[32, 8],
-    activation: Float32[64, 32],
+        scale: Float32[32, 8],
+        offset: Int32[32,],
+        weight: Int32[32, 8],
+        activation: Float32[64, 32],
 ) -> Float32[32, 32]:
     offset = offset.view(32, 1)
 
     def extract(x):
         over = torch.arange(8) * 4
-        mask = 2**4 - 1
+        mask = 2 ** 4 - 1
         return (x[..., None] >> over) & mask
 
     scale = scale[..., None].expand(-1, 8, GROUP).contiguous().view(-1, 64)
@@ -731,17 +753,17 @@ def quant_dot_spec(
 
 @triton.jit
 def quant_dot_kernel(
-    scale_ptr,
-    offset_ptr,
-    weight_ptr,
-    activation_ptr,
-    z_ptr,
-    N0,
-    N1,
-    MID,
-    B0: tl.constexpr,
-    B1: tl.constexpr,
-    B_MID: tl.constexpr,
+        scale_ptr,
+        offset_ptr,
+        weight_ptr,
+        activation_ptr,
+        z_ptr,
+        N0,
+        N1,
+        MID,
+        B0: tl.constexpr,
+        B1: tl.constexpr,
+        B_MID: tl.constexpr,
 ):
     block_id_j = tl.program_id(0)
     block_id_k = tl.program_id(1)
