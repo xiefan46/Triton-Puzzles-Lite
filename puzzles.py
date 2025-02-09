@@ -617,7 +617,12 @@ def flashatt_kernel(
         x = q * k
         print(f"x shape: {x.shape}")
         m_new = tl.maximum(m, tl.max(x, axis=1)[:, None])
-        d_new = myexp(m - m_new) * d + myexp(x - m_new)
+
+        x_exp_sum = tl.sum(myexp(x - m_new), axis=1)
+
+        print(f"x_exp_sum shape : {x_exp_sum.shape}")
+
+        d_new = myexp(m - m_new) * d + x_exp_sum
 
         print(f"m_new shape: {m_new.shape}, d_new shape: {d_new.shape}")
 
