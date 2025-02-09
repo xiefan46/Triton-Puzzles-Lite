@@ -613,25 +613,15 @@ def flashatt_kernel(
         k = tl.load(k_ptr + off_j, mask=mask_j)
         v = tl.load(v_ptr + off_j, mask=mask_j)
 
-        # mask_ij = mask_i[:, None] & mask_j
+        mask_ij = mask_i[:, None] & mask_j
+        x = q[:, None] * k + tl.where(mask_ij, 0, -1.0e6) # [B0, B1] + tl.where
 
-        print(f"q shape: {q.shape}, k shape: {k.shape}, v shape: {v.shape}")
-
-        x = q[:, None] * k # + tl.where(mask_ij, 0, -1.0e6) # [B0, B1] + tl.where
-        print(f"x shape: {x.shape}")
         m_new = tl.maximum(m, tl.max(x, axis=1)[:, None])
 
         x_exp_sum = tl.sum(myexp(x - m_new), axis=1)[:, None]
-
-        print(f"x_exp_sum shape : {x_exp_sum.shape}")
-
         d_new = myexp(m - m_new) * d + x_exp_sum
-
-        print(f"m_new shape: {m_new.shape}, d_new shape: {d_new.shape}")
-
         o_new = myexp(m - m_new) * d / d_new * o + tl.sum(myexp(x - m_new) * v, axis=1)[:, None] / d_new
 
-        print(f"o_new shape: {o_new.shape}")
 
         m = m_new
         d = d_new
