@@ -685,7 +685,7 @@ def conv2d_kernel(
             print(f"x shape: {x.shape}, k reshape shape : {k[None, :, :].shape}")
             conv = x * k[None, :, :]
             print(f"conv xk shape: {conv.shape}")
-            conv = conv.sum(axis=[2, 1])
+            conv = conv.sum(axis=2).sum(axis=1)
             print(f"conv shape: {conv.shape}")
 
             off_conv = off_b * W * H + i_start * W + j_start
