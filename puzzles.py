@@ -622,7 +622,6 @@ def flashatt_kernel(
         d_new = myexp(m - m_new) * d + x_exp_sum
         o_new = myexp(m - m_new) * d / d_new * o + tl.sum(myexp(x - m_new) * v, axis=1)[:, None] / d_new
 
-
         m = m_new
         d = d_new
         o = o_new
@@ -662,7 +661,25 @@ def conv2d_kernel(
         x_ptr, k_ptr, z_ptr, N0, H, W, KH: tl.constexpr, KW: tl.constexpr, B0: tl.constexpr
 ):
     block_id_i = tl.program_id(0)
-    # Finish me!
+
+    off_b = block_id_i * B0 + tl.arange(0, B0)
+    mask_b = off_b < N0
+    for h_start in tl.range(0, H, KH):
+        off_h = tl.arange(0, KH) + h_start
+        mask_h = off_h < H
+        for w_start in tl.range(0, W, KW):
+            off_w = tl.arange(0, KW) + w_start
+            mask_w = off_w < W
+            off_x = off_b * W * H[:, None, None] * off_h[None, :, None] * W + off_w[None, None, :]
+            mask_x = mask_b[:, None, None] & mask_h[None, :, None] & mask_w[None, None, :]
+            x = tl.load(x_ptr + off_x, mask=mask_x)
+            off_k = off_h[:, None] * W + off_w[None, :]
+            mask_k = mask_h[:, None] & mask_w[None, :]
+            k = tl.load(k_ptr + off_k, mask=mask_k)
+            conv = x * k[None, :, :]
+            print(f"conv shape: {conv.shape}")
+            conv = conv.sum(axis=2).sum(axis=1)
+            print(f"conv shape after sum: {conv.shape}")
     return
 
 

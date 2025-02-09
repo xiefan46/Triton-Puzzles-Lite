@@ -692,6 +692,7 @@ def conv2d_spec(x: Float32[4, 8, 8], k: Float32[4, 4]) -> Float32[4, 8, 8]:
 def conv2d_kernel(
     x_ptr, k_ptr, z_ptr, N0, H, W, KH: tl.constexpr, KW: tl.constexpr, B0: tl.constexpr
 ):
+    print(f"N0: {N0}, H: {H}, W:{W}, KH: {KH}, KW: {KW}, B0: {B0}")
     block_id_i = tl.program_id(0)
     # Finish me!
     off_i = block_id_i * B0 + tl.arange(0, B0)
@@ -702,6 +703,7 @@ def conv2d_kernel(
     off_hw = off_h[:, None] * KW + off_w[None, :]
 
     k = tl.load(k_ptr + off_hw)
+    print(f"kernel shape: {k.shape}, off_hw shape: {off_hw.shape}")
 
     for j in tl.range(0, H):
         for l in tl.range(0, W):
@@ -713,6 +715,7 @@ def conv2d_kernel(
 
             z = tl.sum(x * k[None, :])
             off_z = off_i * H * W + j * W + l
+            print(f"x shape: {x.shape}, z shape: {z.shape}, off_z shape: {off_z.shape}")
             tl.store(z_ptr + off_z, z)
 
     return
