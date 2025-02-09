@@ -595,12 +595,13 @@ def flashatt_kernel(
 ):
     block_id_i = tl.program_id(0)
     log2_e = 1.44269504
+    inf = 1.0e6
     myexp = lambda x: tl.exp2(log2_e * x)
 
     off_i = block_id_i * B0 + tl.arange(0, B0)
     mask_i = off_i < N0
 
-    m = tl.full((B0, 1), -float('inf'), dtype=tl.float32)
+    m = tl.full((B0, 1), -inf, dtype=tl.float32)
     d = tl.zeros((B0, 1), dtype=tl.float32)
     o = tl.zeros((B0, 1), dtype=tl.float32)
     for start_j in tl.range(0, T, B1):
