@@ -600,6 +600,8 @@ def flashatt_kernel(
     off_i = block_id_i * B0 + tl.arange(0, B0)
     mask_i = off_i < N0
 
+    q = tl.load(q_ptr + off_i, mask=mask_i)
+
     print(f"N0: {N0}, T: {T}, B0: {B0}, B1: {B1}")
 
     m = tl.full((B0, 1), -float('inf'), dtype=tl.float32)
@@ -610,13 +612,13 @@ def flashatt_kernel(
         mask_j = off_j < T
         off_ij = off_i[:, None] * T + off_j
         mask_ij = mask_i[:, None] & mask_j
-        q = tl.load(q_ptr + off_ij, mask=mask_ij)
-        k = tl.load(k_ptr + off_ij, mask=mask_ij)
-        v = tl.load(v_ptr + off_ij, mask=mask_ij)
+
+        k = tl.load(k_ptr + off_ij, mask=mask_ij, other=-1.0e6)
+        v = tl.load(v_ptr + off_ij, mask=mask_ij, other=-1.0e6)
 
         print(f"q shape: {q.shape}, k shape: {k.shape}, v shape: {v.shape}")
 
-        x = q * k
+        x = q[:, None] * k # [B0, B1]
         print(f"x shape: {x.shape}")
         m_new = tl.maximum(m, tl.max(x, axis=1)[:, None])
 
