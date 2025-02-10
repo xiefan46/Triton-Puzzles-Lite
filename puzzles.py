@@ -670,7 +670,7 @@ def conv2d_kernel(
     off_k = off_h[:, None] * KW + off_w
     k = tl.load(k_ptr + off_k)
 
-    print(f"k shape: {k.shape}")
+    # print(f"k shape: {k.shape}")
 
     for i_start in tl.range(0, H):
         off_i = off_h[None, :, None] + i_start
@@ -679,31 +679,14 @@ def conv2d_kernel(
             off_x = off_b[:, None, None] * H * W + off_i * W + off_j
             mask_x = (off_i < H) & (off_j < W)
             x = tl.load(x_ptr + off_x, mask=mask_x)
-            print(f"x shape: {x.shape}, k reshape shape : {k[None, :, :].shape}")
+            # print(f"x shape: {x.shape}, k reshape shape : {k[None, :, :].shape}")
             conv = x * k[None, :, :]
-            print(f"conv xk shape: {conv.shape}")
+            # print(f"conv xk shape: {conv.shape}")
             conv = conv.sum(axis=2).sum(axis=1)
-            print(f"conv shape: {conv.shape}")
+            # print(f"conv shape: {conv.shape}")
 
             off_conv = off_b * W * H + i_start * W + j_start
             tl.store(z_ptr + off_conv, conv, mask=mask_b)
-
-    # for h_start in tl.range(0, H, KH):
-    #     off_h = tl.arange(0, KH) + h_start
-    #     mask_h = off_h < H
-    #     for w_start in tl.range(0, W, KW):
-    #         off_w = tl.arange(0, KW) + w_start
-    #         mask_w = off_w < W
-    #         off_x = off_b * W * H[:, None, None] * off_h[None, :, None] * W + off_w[None, None, :]
-    #         mask_x = mask_b[:, None, None] & mask_h[None, :, None] & mask_w[None, None, :]
-    #         x = tl.load(x_ptr + off_x, mask=mask_x)
-    #         off_k = off_h[:, None] * W + off_w[None, :]
-    #         mask_k = mask_h[:, None] & mask_w[None, :]
-    #         k = tl.load(k_ptr + off_k, mask=mask_k)
-    #         conv = x * k[None, :, :]
-    #         print(f"conv shape: {conv.shape}")
-    #         conv = conv.sum(axis=2).sum(axis=1)
-    #         print(f"conv shape after sum: {conv.shape}")
     return
 
 
@@ -732,6 +715,9 @@ def dot_spec(x: Float32[4, 32, 32], y: Float32[4, 32, 32]) -> Float32[4, 32, 32]
     return x @ y
 
 
+# batch dim: i, B2, N2
+# A: [N0, MID] j, l B: [MID, N1] l, k a: [B0, B_MID] b: [B_MID, B1]
+
 @triton.jit
 def dot_kernel(
         x_ptr,
@@ -749,7 +735,23 @@ def dot_kernel(
     block_id_j = tl.program_id(0)
     block_id_k = tl.program_id(1)
     block_id_i = tl.program_id(2)
-    # Finish me!
+
+    off_i = block_id_i * B2 + tl.arange(0, B2)
+    off_j = block_id_j * B0 + tl.arange(0, B0)
+    off_k = block_id_k * B1 + tl.arange(0, B1)
+    mask_i = off_i < N2
+    mask_j = off_j < N0
+    mask_k = off_k < N1
+
+    z = tl.full((B2, B0, B1), 0.0, dtype=tl.float32)
+    for l in tl.range(0, MID, B_MID):
+        off_l = l + tl.arange(0, B_MID)
+        mask_l = off_l < MID
+        off_x = off_i[:, None, None] * N0 * MID + off_j[None, :, None] * MID + off_l[None, None, :]
+        mask_x = mask_i[:, None, None] & mask_j[None, :, None] & mask_l[None, None, :]
+        off_y = off_i[:, None, None] * N0 * MID + off_l[None, :, None] * N1  + off_k[None, None, :]
+        mask_y = mask_i[:, None, None] & mask_l[None, :, None] & mask_k[None, None, :]
+
     return
 
 
