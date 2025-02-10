@@ -754,6 +754,7 @@ def dot_kernel(
         mask_y = mask_i[:, None, None] & mask_l[None, :, None] & mask_k[None, None, :]
         x = tl.load(x_ptr + off_x, mask=mask_x)
         y = tl.load(y_ptr + off_y, mask=mask_y)
+        print(f"x shape: {x.shape}, y shape: {y.shape}")
         z += x @ y
 
     off_z = off_i[:, None, None] * N0 * N1 + off_j[None, :, None] * N1 + off_k[None, None, :]
