@@ -744,6 +744,7 @@ def dot_kernel(
     mask_k = off_k < N1
 
     z = tl.full((B2, B0, B1), 0.0, dtype=tl.float32)
+
     for l in tl.range(0, MID, B_MID):
         off_l = l + tl.arange(0, B_MID)
         mask_l = off_l < MID
@@ -751,7 +752,13 @@ def dot_kernel(
         mask_x = mask_i[:, None, None] & mask_j[None, :, None] & mask_l[None, None, :]
         off_y = off_i[:, None, None] * N0 * MID + off_l[None, :, None] * N1  + off_k[None, None, :]
         mask_y = mask_i[:, None, None] & mask_l[None, :, None] & mask_k[None, None, :]
+        x = tl.load(x_ptr + off_x, mask=mask_x)
+        y = tl.load(y_ptr + off_y, mask=mask_y)
+        z += x @ y
 
+    off_z = off_i[:, None, None] * N0 * N1 + off_j[None, :, None] * N1 + off_k[None, None, :]
+    z_mask = mask_i[:, None, None] & mask_j[None, :, None] & mask_k[None, None, :]
+    tl.store(z_ptr + off_z, z, mask=z_mask)
     return
 
 
